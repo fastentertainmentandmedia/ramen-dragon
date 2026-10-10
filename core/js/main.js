@@ -44,6 +44,16 @@ document.addEventListener('touchend', (event) => {
 
 
 // ============================================================
+// [BLOCK: preloader]
+// Прелоадер снимается вручную, когда игра готова.
+// Функция скрывает его и показывает интерфейс.
+// ============================================================
+
+function hidePreloader() {
+  document.documentElement.classList.add('ready');
+}
+
+// ============================================================
 // [BLOCK: metrika]
 // Отложенная загрузка Яндекс.Метрики.
 // Грузим при первом взаимодействии пользователя
@@ -131,11 +141,15 @@ const game = createLoop({
       }, ui);
     },
 
-    onLimit: () => updateState({
-      limitReached: true,
-      hintVisible: true,
-      hintKind: 'limit',
-    }, ui),
+    onLimit: ({ score = 0 } = {}) => {
+      const isNewRecord = score > 0 && updateBestScore(score);
+      updateState({
+        limitReached: true,
+        hintVisible: true,
+        hintKind: 'limit',
+        ...(isNewRecord ? { bestScore: score } : {}),
+      }, ui);
+    },
   },
 });
 
@@ -262,12 +276,16 @@ function unlockGame() {
 
   ui.startTimer(() => game.tickSession());
   ui.updateTimer();
+
 }
 
 
 const intro = createIntro({
   onAccept: unlockGame,
 });
+
+// Снимаем прелоадер ДО intro.init() — иначе модалка под ним
+hidePreloader();
 
 intro.init();
 
